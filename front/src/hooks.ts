@@ -46,9 +46,11 @@ export const usePython = () => {
 	}, []);
 
 	const runPython = async (code: string) => {
+		let output = "";
+
 		if (!pyodide) {
 			setOutput("Python interpreter not loaded yet. Please wait.");
-			return;
+			return output;
 		}
 
 		setOutput("Running...");
@@ -56,7 +58,8 @@ export const usePython = () => {
 			// Redirect stdout to capture print statements
 			pyodide.setStdout({
 				batched: (text: string) => {
-					setOutput((prev) => prev + text);
+					output += text;
+					setOutput(output);
 				},
 			});
 
@@ -70,6 +73,7 @@ export const usePython = () => {
 				error instanceof Error ? error.message : String(error);
 			setOutput(`Error: ${errorMessage}`);
 		}
+		return output;
 	};
 
 	return {

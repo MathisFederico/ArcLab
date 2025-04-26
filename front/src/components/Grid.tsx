@@ -11,12 +11,13 @@ function Grid({
 	colorScheme,
 	title,
 	showDimensions = false,
+	className = "",
 }: GridProps) {
 	const rows = matrix.length;
 	const cols = matrix[0]?.length || 0;
 
 	return (
-		<div className="bg-gray-800 rounded-lg p-3">
+		<div className={`bg-gray-800 rounded-lg p-3 ${className}`}>
 			{title && (
 				<h3 className="text-sm font-medium mb-2 text-gray-300">{title}</h3>
 			)}

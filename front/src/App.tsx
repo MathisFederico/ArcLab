@@ -2,19 +2,23 @@ import { useEffect, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import CodePane from "./components/CodePane";
 import Navbar from "./components/Navbar";
-import SubmissionsPane from "./components/SubmissionsPane";
+import SubmissionsPane, { type Submission } from "./components/SubmissionsPane";
 import { usePuzzle, usePuzzles, usePython } from "./hooks";
-import type { Matrix, Puzzle } from "./types";
+import type { Puzzle } from "./types";
+
+const DEFAULT_CODE = `
+from typing import List
+
+Matrix = List[List[int]]
+
+def solve(matrix: Matrix) -> Matrix:
+    return matrix
+`;
 
 function App() {
-	// Code editor state
-	const [code, setCode] = useState(
-		"# Write your Python code here\nprint('Hello, World!')",
-	);
-
-	// Python execution hook
-	const { output, pyodideLoading, runPython } = usePython();
-
+	const [code, setCode] = useState(DEFAULT_CODE);
+	const { pyodideLoading, runPython, output } = usePython();
+	const [submissions, setSubmissions] = useState<Submission[]>([]);
 	// Puzzle state
 	const [currentPuzzleId, setCurrentPuzzleId] = useState("");
 	const [previousPuzzleId, setPreviousPuzzleId] = useState<string | null>(null);
@@ -49,23 +53,6 @@ function App() {
 		}
 	}, [puzzleData, isPuzzleLoading, currentPuzzleId]);
 
-	// When changing puzzles, keep the previous data until new data is loaded
-	const displayPuzzleData =
-		isPuzzleLoading && previousPuzzleId !== currentPuzzleId
-			? previousPuzzleData
-			: puzzleData;
-
-	// Create submissions directly from current puzzle data
-	const submissions = puzzleData
-		? puzzleData.examples.map((example) => ({
-				id: puzzleData.id,
-				input: example.input,
-				expectedOutput: example.expectedOutput,
-				predictedOutput: [] as Matrix,
-				isCorrect: false,
-			}))
-		: [];
-
 	// Handle puzzle selection with smoother UI
 	const handlePuzzleChange = (puzzleId: string) => {
 		if (puzzleId !== currentPuzzleId) {
@@ -79,7 +66,31 @@ function App() {
 	};
 
 	const runCode = async () => {
-		await runPython(code);
+		const inputs = puzzleData?.examples.map((example) => example.input) ?? [];
+		const codeToRun = `
+import json
+
+${code}
+
+inputs = ${JSON.stringify(inputs)}
+predictions = [solve(input) for input in inputs]
+print(f"<predictions>{json.dumps(predictions)}</predictions>")
+`;
+		const output = await runPython(codeToRun);
+		const answers = JSON.parse(
+			output.match(/<predictions>(.*?)<\/predictions>/)?.[1] ?? "[]",
+		);
+		// TODO: check with deep check instead
+		setSubmissions(
+			inputs.map((input, index) => ({
+				id: puzzleData?.id ?? "",
+				input,
+				expectedOutput: puzzleData?.examples[index].expectedOutput ?? [],
+				predictedOutput: answers[index],
+				isCorrect:
+					answers[index] === puzzleData?.examples[index].expectedOutput,
+			})),
+		);
 	};
 
 	return (
