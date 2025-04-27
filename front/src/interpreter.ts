@@ -19,6 +19,7 @@ async function getOrLoadPyodide() {
 		const pyodideInstance = await loadPyodide({
 			indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.5/full/",
 		});
+		pyodideInstance.loadPackage("numpy")
 		return pyodideInstance as unknown as CustomPyodide;
 	}
 

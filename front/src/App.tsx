@@ -8,11 +8,97 @@ import { useRunPython } from "./interpreter";
 import type { Matrix } from "./types";
 
 const DEFAULT_CODE = `from typing import TypeAlias
+from dataclasses import dataclass
+from enum import IntEnum
+
+import numpy as np
+
+
+class CellColor(IntEnum):
+  TRANSPARENT = -1
+  BLACK = 0
+  BLUE = 1
+  RED = 2
+  GREEN = 3
+  YELLOW = 4
+  GRAY = 5
+  PINK = 6
+  ORANGE = 7
+  CYAN = 8
+  DARK_RED = 9
 
 Grid: TypeAlias = list[list[int]]
+Pos: TypeAlias = tuple[int, int]
+
+def grid_shape(grid: Grid) -> tuple[int, int]:
+  """Helper to get the shape of a grid."""
+  return (len(grid), len(grid[0]))
+
+def grid_colors(grid: Grid) -> dict[CellColor, int]:
+  """Count the occurences of each colors in a grid."""
+  color_count = {color: 0 for color in CellColor}
+  for row in grid:
+    for cell in row:
+      color_count[CellColor(cell)] += 1
+  return color_count
+
+def recolor(grid: Grid, old_color: CellColor, new_color: CellColor):
+  """Recolor cells of the grid of the old_color to the new_color."""
+  grid_arr = np.array(grid)
+  grid_arr[grid_arr == old_color.value] = new_color.value
+  return grid_arr.tolist()
+
+
+@dataclass
+class Object:
+  pos: Pos
+  content: Grid
+
+def object_from_color(grid: Grid, color: CellColor) -> Object:
+  """Create an object from a given color."""
+  grid_arr = np.array(grid)
+  value_poses = np.array(np.where(grid_arr == color.value))
+  if value_poses.size == 0:
+    raise ValueError("Attempt to make object from color %s not present in grid %s", color, grid)
+
+  obj_pos = np.array(np.min(value_poses, axis=1))
+  obj_limit = np.array(np.max(value_poses, axis=1)) + 1
+
+  obj_arr = grid_arr.copy()
+  obj_arr = obj_arr[obj_pos[0] : obj_limit[0], obj_pos[1] : obj_limit[1]]
+  obj_arr[obj_arr != color.value] = CellColor.TRANSPARENT.value
+  return Object(pos=(obj_pos[0], obj_pos[1]), content=obj_arr.tolist())
+
+def object_from_background(grid: Grid, background_color: CellColor) -> Object:
+  """Create an object by removing the background of the given color."""
+  grid_arr = np.array(grid)
+  value_poses = np.array(np.where(grid_arr != background_color.value))
+  if value_poses.size == 0:
+    raise ValueError("Attempt to make object from uniform background %s", color)
+
+  obj_pos = np.array(np.min(value_poses, axis=1))
+  obj_limit = np.array(np.max(value_poses, axis=1)) + 1
+
+  obj_arr = grid_arr.copy()
+  obj_arr = obj_arr[obj_pos[0] : obj_limit[0], obj_pos[1] : obj_limit[1]]
+  obj_arr[obj_arr == background_color.value] = CellColor.TRANSPARENT.value
+  return Object(pos=(obj_pos[0], obj_pos[1]), content=obj_arr.tolist())
+
+
+### TASK SOLUTION
+
 
 def solve(input_grid: Grid) -> Grid:
-  return input_grid
+  object_shape = np.array(grid_shape(input_grid))
+  output_array = np.zeros(object_shape ** 2)
+  for i, row in enumerate(input_grid):
+    for j, cell in enumerate(row):
+      if cell == CellColor.BLACK.value:
+        continue
+      pos = (i * object_shape[0], j * object_shape[1])
+      output_array[pos[0]:pos[0]+object_shape[0], pos[1]:pos[1]+object_shape[1]] = input_grid
+  return output_array.tolist()
+
 `;
 
 const GRID_COLORS = {
@@ -56,7 +142,6 @@ function App() {
 		const expected_outputs = taskQuery.data?.examples.map(
 			(example) => example.output,
 		);
-		console.log(JSON.stringify(expected_outputs?.[0]));
 		const codeToRun = `
 import json
 import traceback
@@ -76,6 +161,7 @@ for i, input in enumerate(inputs):
   except Exception as e:
     predictions.append(None)
     print(traceback.format_exc())
+
   is_valid = expected_outputs[i] == pred
   if is_valid:
     print("✅ Correct!")
@@ -87,15 +173,14 @@ print(f"<predictions>{json.dumps(predictions)}</predictions>")
 `;
 		const output = await runPythonMutation.mutateAsync(codeToRun);
 		setCodeOutput(output);
-		const answers: Matrix[] = JSON.parse(
+		const answers: Array<Matrix | null> = JSON.parse(
 			output.match(/<predictions>(.*?)<\/predictions>\s*$/)?.[1] ?? "",
 		);
-		console.log(taskQuery.data?.examples[0].output);
 		setCodeOutput(output.replace(/<predictions>.*?<\/predictions>\s*$/, ""));
 		setSubmissions(
 			answers.map((answer, index) => ({
 				exampleId: taskQuery.data?.examples[index].id ?? "",
-				predictedOutput: answer,
+				predictedOutput: answer ?? [[-1]],
 				isCorrect:
 					JSON.stringify(answer) ===
 					JSON.stringify(taskQuery.data?.examples[index].output),
