@@ -1,7 +1,6 @@
 import { python } from "@codemirror/lang-python";
 import CodeMirror from "@uiw/react-codemirror";
 
-// Custom interface for our Pyodide usage
 interface CustomPyodide {
 	runPythonAsync: (code: string) => Promise<unknown>;
 	setStdout: (options: {
@@ -17,7 +16,8 @@ interface CodePaneProps {
 	setCode: (code: string) => void;
 	output: string;
 	runCode: () => Promise<void>;
-	isLoading: boolean;
+	isRunning: boolean;
+	isDisabled: boolean;
 }
 
 function CodePane({
@@ -25,27 +25,30 @@ function CodePane({
 	setCode,
 	output,
 	runCode,
-	isLoading,
+	isRunning,
+	isDisabled,
 }: CodePaneProps) {
 	return (
 		<div className="flex flex-col h-full border-r border-gray-700 bg-[#181A1F]">
-			<div className="relative flex-1">
-				<CodeMirror
-					value={code}
-					height="100%"
-					extensions={[python()]}
-					onChange={(value) => setCode(value)}
-					theme="dark"
-					className="h-full"
-				/>
+			<div className="relative flex-1 overflow-hidden">
+				<div className="h-full overflow-hidden">
+					<CodeMirror
+						value={code}
+						height="100%"
+						extensions={[python()]}
+						onChange={(value) => setCode(value)}
+						theme="dark"
+						className="h-full overflow-auto"
+					/>
+				</div>
 				<button
 					type="button"
-					className="absolute bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md shadow transition-colors flex items-center justify-center"
+					className="absolute bottom-4 right-4 bg-white hover:bg-gray-200 text-black py-2 px-4 rounded-md shadow transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
 					onClick={runCode}
-					disabled={isLoading}
+					disabled={isDisabled || isRunning}
 				>
-					{isLoading ? (
-						"Loading..."
+					{isRunning ? (
+						"Running..."
 					) : (
 						<>
 							Submit <span className="ml-1">→</span>
@@ -54,9 +57,10 @@ function CodePane({
 				</button>
 			</div>
 			<div className="h-1/3 border-t border-gray-700 p-4 bg-[#181A1F]">
-				<div className="h-full overflow-auto bg-gray-900 rounded p-2">
+				<h2 className="text-xl font-semibold mb-4">Submissions</h2>
+				<div className="h-full overflow-auto">
 					<pre className="font-mono text-gray-300 whitespace-pre-wrap">
-						{output}
+						{output || "No submissions yet, submit the code to see results"}
 					</pre>
 				</div>
 			</div>

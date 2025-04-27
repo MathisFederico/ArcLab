@@ -1,40 +1,48 @@
 import { useState } from "react";
-import type { Grid } from "../types";
+import type { Matrix, TaskExample } from "../types";
 import Grid from "./Grid";
 
 export interface Submission {
-	id: string;
-	input: Grid;
-	output: Grid;
-	predictedOutput: Grid;
+	exampleId: string;
+	predictedOutput: Matrix;
 	isCorrect: boolean;
 }
 
 interface SubmissionsPaneProps {
+	examples: TaskExample[];
 	submissions: Submission[];
 	colorScheme: Record<number, string>;
 }
 
-function SubmissionsPane({ submissions, colorScheme }: SubmissionsPaneProps) {
-	const [hoveredSubmission, setHoveredSubmission] = useState<string | null>(
-		null,
+function SubmissionsPane({
+	examples,
+	submissions,
+	colorScheme,
+}: SubmissionsPaneProps) {
+	const [hoveredExampleId, setHoveredExampleId] = useState<string | null>(null);
+	const hasSubmissions = submissions.length > 0;
+
+	const submissionsByExampleId = submissions.reduce(
+		(acc, submission) => {
+			acc[submission.exampleId] = submission;
+			return acc;
+		},
+		{} as Record<string, Submission>,
 	);
+	const examplesWithSubmissions = examples.map((example) => ({
+		...example,
+		...(submissionsByExampleId[example.id] ?? {}),
+	}));
 
 	return (
 		<div className="h-full p-4 overflow-y-auto bg-[#181A1F]">
 			<div className="mb-4">
 				<h2 className="text-xl font-semibold mb-4">Submissions</h2>
-				{submissions.length > 0 && (
-					<p className="text-xs text-gray-400 mb-4">
-						Hover over the output grid to see predicted output. Incorrect
-						submissions are highlighted with a red border.
-					</p>
-				)}
-				{submissions.map((submission, index) => (
-					<div key={submission.id} className="flex space-x-4 mb-4">
+				{examplesWithSubmissions.map((example, index) => (
+					<div key={example.id} className="flex space-x-4 mb-4">
 						<div className="flex-1">
 							<Grid
-								grid={submission.input}
+								matrix={example.input}
 								colorScheme={colorScheme}
 								title={`Ex.${index + 1} Input`}
 								showDimensions={true}
@@ -45,29 +53,37 @@ function SubmissionsPane({ submissions, colorScheme }: SubmissionsPaneProps) {
 						</div>
 						<div
 							className="flex-1 relative"
-							onMouseEnter={() => setHoveredSubmission(submission.id)}
-							onMouseLeave={() => setHoveredSubmission(null)}
+							onMouseEnter={() => setHoveredExampleId(example.id)}
+							onMouseLeave={() => setHoveredExampleId(null)}
 						>
 							<Grid
-								grid={
-									hoveredSubmission === submission.id
-										? submission.predictedOutput
-										: submission.output
+								matrix={
+									!hasSubmissions ||
+									(hoveredExampleId === example.id && example.predictedOutput)
+										? example.output
+										: example.predictedOutput
 								}
 								colorScheme={colorScheme}
 								title={
-									hoveredSubmission === submission.id
-										? `Ex.${index + 1} Predicted Output`
-										: `Ex.${index + 1} Wanted Output`
+									!hasSubmissions || hoveredExampleId === example.id
+										? `Ex.${index + 1} Expected Output`
+										: `Ex.${index + 1} Predicted Output`
 								}
 								showDimensions={true}
 								className={
-									!submission.isCorrect ? "border-2 border-red-500 rounded" : ""
+									example.isCorrect === false
+										? "border-2 border-red-500 rounded"
+										: ""
 								}
 							/>
-							{!submission.isCorrect && hoveredSubmission === submission.id && (
+							{example.isCorrect === false && (
 								<div className="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 py-0.5 rounded">
 									Incorrect
+								</div>
+							)}
+							{example.isCorrect === true && (
+								<div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1 py-0.5 rounded">
+									Correct
 								</div>
 							)}
 						</div>

@@ -1,8 +1,9 @@
-export type Grid = number[][];
+export type Matrix = number[][];
 
 export interface TaskExample {
-	input: Grid;
-	output: Grid;
+	id: string;
+	input: Matrix;
+	output: Matrix;
 }
 
 export interface Task {
