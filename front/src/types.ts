@@ -1,9 +1,11 @@
-export type Matrix = number[][];
+export type Grid = number[][];
 
-export interface Puzzle {
+export interface TaskExample {
+	input: Grid;
+	output: Grid;
+}
+
+export interface Task {
 	id: string;
-	examples: {
-		input: Matrix;
-		expectedOutput: Matrix;
-	}[];
+	examples: TaskExample[];
 }

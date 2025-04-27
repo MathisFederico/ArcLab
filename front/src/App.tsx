@@ -3,60 +3,66 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import CodePane from "./components/CodePane";
 import Navbar from "./components/Navbar";
 import SubmissionsPane, { type Submission } from "./components/SubmissionsPane";
-import { usePuzzle, usePuzzles, usePython } from "./hooks";
-import type { Puzzle } from "./types";
+import { useTask, useTasks, usePython } from "./hooks";
+import type { Task } from "./types";
 
-const DEFAULT_CODE = `
-from typing import List
 
-Matrix = List[List[int]]
+const DEFAULT_CODE = `from typing import TypeAlias
 
-def solve(matrix: Matrix) -> Matrix:
-    return matrix
+Grid: TypeAlias = list[list[int]]
+
+def solve(input_grid: Grid) -> Grid:
+    return input_grid
+
 `;
+
+const GRID_COLORS = {
+	0: "#000000",
+	1: "#1e93ff",
+	2: "#f93c31",
+	3: "#4fcc30",
+	4: "#ffdc00",
+	5: "#999999",
+	6: "#e53aa3",
+	7: "#ff851b",
+	8: "#87d8f1",
+	9: "#921231",
+}
 
 function App() {
 	const [code, setCode] = useState(DEFAULT_CODE);
 	const { pyodideLoading, runPython, output } = usePython();
 	const [submissions, setSubmissions] = useState<Submission[]>([]);
-	// Puzzle state
-	const [currentPuzzleId, setCurrentPuzzleId] = useState("");
-	const [previousPuzzleId, setPreviousPuzzleId] = useState<string | null>(null);
-	const [previousPuzzleData, setPreviousPuzzleData] = useState<Puzzle | null>(
-		null,
-	);
 
-	// Color scheme for the grid cells
-	const colorScheme = {
-		0: "transparent",
-		1: "#ff5555", // Red
-		2: "#88ccff", // Light blue
-	};
+	// Task state
+	const [currentTaskId, setCurrentTaskId] = useState("");
+	const [previousTaskId, setPreviousTaskId] = useState<string | null>(null);
+	const [previousTaskData, setPreviousTaskData] = useState<Task | null>(null);
 
-	// React Query hooks for puzzles (without destructuring)
-	const puzzlesQuery = usePuzzles();
-	const puzzles = puzzlesQuery.data || [];
-	const isPuzzlesLoading = puzzlesQuery.isLoading;
-	const puzzlesError = puzzlesQuery.error;
+	// React Query hooks for tasks (without destructuring)
+	const tasksQuery = useTasks();
+	const tasks = tasksQuery.data || [];
+	const isTasksLoading = tasksQuery.isLoading;
+	const tasksError = tasksQuery.error;
 
-	// React Query hook for puzzle detail (without destructuring)
-	const puzzleQuery = usePuzzle(currentPuzzleId || null);
-	const puzzleData = puzzleQuery.data;
-	const isPuzzleLoading = puzzleQuery.isLoading;
-	const puzzleError = puzzleQuery.error;
+	// React Query hook for task detail (without destructuring)
+	const taskQuery = useTask(currentTaskId || null);
+	const taskData = taskQuery.data;
+	const isTaskLoading = taskQuery.isLoading;
+	const taskError = taskQuery.error;
 
-	// Update previous puzzle data when new data is loaded
+	// Update previous task data when new data is loaded
 	useEffect(() => {
-		if (puzzleData && !isPuzzleLoading) {
-			setPreviousPuzzleData(puzzleData);
-			setPreviousPuzzleId(currentPuzzleId);
+		if (taskData && !isTaskLoading) {
+			setPreviousTaskData(taskData);
+			setPreviousTaskId(currentTaskId);
 		}
-	}, [puzzleData, isPuzzleLoading, currentPuzzleId]);
+	}, [taskData, isTaskLoading, currentTaskId]);
 
-	// Handle puzzle selection with smoother UI
-	const handlePuzzleChange = (puzzleId: string) => {
-		if (puzzleId !== currentPuzzleId) {
-			setCurrentPuzzleId(puzzleId);
+	// Handle task selection with smoother UI
+	const handleTaskChange = (taskId: string) => {
+		if (taskId !== currentTaskId) {
+			setCurrentTaskId(taskId);
 		}
 	};
 
@@ -66,7 +72,7 @@ function App() {
 	};
 
 	const runCode = async () => {
-		const inputs = puzzleData?.examples.map((example) => example.input) ?? [];
+		const inputs = taskData?.examples.map((example) => example.input) ?? [];
 		const codeToRun = `
 import json
 
@@ -83,12 +89,12 @@ print(f"<predictions>{json.dumps(predictions)}</predictions>")
 		// TODO: check with deep check instead
 		setSubmissions(
 			inputs.map((input, index) => ({
-				id: puzzleData?.id ?? "",
+				id: taskData?.id ?? "",
 				input,
-				expectedOutput: puzzleData?.examples[index].expectedOutput ?? [],
+				output: taskData?.examples[index].output ?? [],
 				predictedOutput: answers[index],
 				isCorrect:
-					answers[index] === puzzleData?.examples[index].expectedOutput,
+					answers[index] === taskData?.examples[index].output,
 			})),
 		);
 	};
@@ -97,13 +103,13 @@ print(f"<predictions>{json.dumps(predictions)}</predictions>")
 		<div className="flex flex-col h-screen bg-[#181A1F] text-white">
 			{/* Navbar */}
 			<Navbar
-				currentPuzzleId={currentPuzzleId}
-				handlePuzzleChange={handlePuzzleChange}
-				puzzles={puzzles}
-				isPuzzlesLoading={isPuzzlesLoading}
-				puzzlesError={puzzlesError}
-				isPuzzleLoading={isPuzzleLoading}
-				puzzleError={puzzleError}
+				currentTaskId={currentTaskId}
+				handleTaskChange={handleTaskChange}
+				tasks={tasks}
+				isTasksLoading={isTasksLoading}
+				tasksError={tasksError}
+				isTaskLoading={isTaskLoading}
+				taskError={taskError}
 				getErrorMessage={getErrorMessage}
 			/>
 
@@ -111,7 +117,7 @@ print(f"<predictions>{json.dumps(predictions)}</predictions>")
 			<div className="flex flex-1 overflow-hidden">
 				<PanelGroup direction="horizontal">
 					{/* Left panel - Code editor */}
-					<Panel defaultSize={66} minSize={30}>
+					<Panel defaultSize={50} minSize={30}>
 						<CodePane
 							code={code}
 							setCode={setCode}
@@ -124,15 +130,15 @@ print(f"<predictions>{json.dumps(predictions)}</predictions>")
 					<PanelResizeHandle className="w-1 hover:w-2 bg-gray-700 hover:bg-blue-500 transition-all cursor-col-resize" />
 
 					{/* Right panel - Grid examples */}
-					<Panel defaultSize={34} minSize={30}>
+					<Panel defaultSize={50} minSize={30}>
 						<div className="relative h-full overflow-auto">
 							<SubmissionsPane
 								submissions={submissions}
-								colorScheme={colorScheme}
+								colorScheme={GRID_COLORS}
 							/>
-							{isPuzzleLoading &&
-								currentPuzzleId &&
-								previousPuzzleId !== currentPuzzleId && (
+							{isTaskLoading &&
+								currentTaskId &&
+								previousTaskId !== currentTaskId && (
 									<div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
 										<div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" />
 									</div>

@@ -1,8 +1,8 @@
-import type { Puzzle } from "./types";
+import type { Task } from "./types";
 
-export const MOCK_DATABASE: Record<string, Puzzle> = {
-	puzzle1: {
-		id: "puzzle1",
+export const MOCK_DATABASE: Record<string, Task> = {
+	task1: {
+		id: "task1",
 		examples: [
 			{
 				input: [
@@ -27,7 +27,7 @@ export const MOCK_DATABASE: Record<string, Puzzle> = {
 						0, 0,
 					],
 				],
-				expectedOutput: [
+				output: [
 					[
 						1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 2, 1, 1,
 						1, 1,
@@ -57,7 +57,7 @@ export const MOCK_DATABASE: Record<string, Puzzle> = {
 						0, 0,
 					],
 				],
-				expectedOutput: [
+				output: [
 					[
 						1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 2, 1, 1,
 						1, 1,
@@ -66,8 +66,8 @@ export const MOCK_DATABASE: Record<string, Puzzle> = {
 			},
 		],
 	},
-	puzzle2: {
-		id: "puzzle2",
+	task2: {
+		id: "task2",
 		examples: [
 			{
 				input: [
@@ -92,7 +92,7 @@ export const MOCK_DATABASE: Record<string, Puzzle> = {
 						0, 0,
 					],
 				],
-				expectedOutput: [
+				output: [
 					[
 						1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 						0, 0,

@@ -1,5 +1,5 @@
 interface GridProps {
-	matrix: number[][];
+	grid: number[][];
 	colorScheme: Record<number, string>;
 	title?: string;
 	showDimensions?: boolean;
@@ -7,14 +7,14 @@ interface GridProps {
 }
 
 function Grid({
-	matrix,
+	grid,
 	colorScheme,
 	title,
 	showDimensions = false,
 	className = "",
 }: GridProps) {
-	const rows = matrix.length;
-	const cols = matrix[0]?.length || 0;
+	const rows = grid.length;
+	const cols = grid[0]?.length || 0;
 
 	return (
 		<div className={`bg-gray-800 rounded-lg p-3 ${className}`}>
@@ -32,7 +32,7 @@ function Grid({
 					gridTemplateColumns: `repeat(${cols}, 1fr)`,
 				}}
 			>
-				{matrix.flatMap((row, rowIndex) =>
+				{grid.flatMap((row, rowIndex) =>
 					row.map((cell, colIndex) => (
 						<div
 							key={`cell-${rowIndex}-${colIndex}-${cell}`}

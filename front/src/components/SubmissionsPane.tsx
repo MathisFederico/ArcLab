@@ -1,12 +1,12 @@
 import { useState } from "react";
-import type { Matrix } from "../types";
+import type { Grid } from "../types";
 import Grid from "./Grid";
 
 export interface Submission {
 	id: string;
-	input: Matrix;
-	expectedOutput: Matrix;
-	predictedOutput: Matrix;
+	input: Grid;
+	output: Grid;
+	predictedOutput: Grid;
 	isCorrect: boolean;
 }
 
@@ -34,7 +34,7 @@ function SubmissionsPane({ submissions, colorScheme }: SubmissionsPaneProps) {
 					<div key={submission.id} className="flex space-x-4 mb-4">
 						<div className="flex-1">
 							<Grid
-								matrix={submission.input}
+								grid={submission.input}
 								colorScheme={colorScheme}
 								title={`Ex.${index + 1} Input`}
 								showDimensions={true}
@@ -49,16 +49,16 @@ function SubmissionsPane({ submissions, colorScheme }: SubmissionsPaneProps) {
 							onMouseLeave={() => setHoveredSubmission(null)}
 						>
 							<Grid
-								matrix={
+								grid={
 									hoveredSubmission === submission.id
 										? submission.predictedOutput
-										: submission.expectedOutput
+										: submission.output
 								}
 								colorScheme={colorScheme}
 								title={
 									hoveredSubmission === submission.id
 										? `Ex.${index + 1} Predicted Output`
-										: `Ex.${index + 1} Output`
+										: `Ex.${index + 1} Wanted Output`
 								}
 								showDimensions={true}
 								className={

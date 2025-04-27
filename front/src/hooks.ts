@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "react-query";
-import { getPuzzleForId, getPuzzles } from "./api";
+import { getTaskForId, getTasks } from "./api";
 import type { CustomPyodide } from "./components/CodePane";
 
-export const usePuzzles = () => {
-	return useQuery("puzzles", getPuzzles);
+export const useTasks = () => {
+	return useQuery("tasks", getTasks);
 };
 
-export const usePuzzle = (puzzleId: string | null) => {
+export const useTask = (taskId: string | null) => {
 	return useQuery(
-		["puzzle", puzzleId],
-		() => (puzzleId ? getPuzzleForId(puzzleId) : null),
+		["task", taskId],
+		() => (taskId ? getTaskForId(taskId) : null),
 		{
-			enabled: Boolean(puzzleId),
+			enabled: true,
 			// Don't refetch automatically when window regains focus
-			refetchOnWindowFocus: false,
+			refetchOnWindowFocus: true,
 		},
 	);
 };
