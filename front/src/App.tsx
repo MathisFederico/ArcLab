@@ -53,6 +53,10 @@ function App() {
 		}
 
 		const inputs = taskQuery.data?.examples.map((example) => example.input);
+		const expected_outputs = taskQuery.data?.examples.map(
+			(example) => example.output,
+		);
+		console.log(JSON.stringify(expected_outputs?.[0]));
 		const codeToRun = `
 import json
 import traceback
@@ -60,16 +64,24 @@ import traceback
 ${code}
 
 inputs = ${JSON.stringify(inputs)}
+expected_outputs = ${JSON.stringify(expected_outputs)}
 predictions = []
 
 for i, input in enumerate(inputs):
   print("-" * 10 + f" Running Example {i+1} " + "-" * 10)
+  pred = None
   try:
-    predictions.append(solve(input))
+    pred = solve(input)
+    predictions.append(pred)
   except Exception as e:
     predictions.append(None)
     print(traceback.format_exc())
-  print("\\n")
+  is_valid = expected_outputs[i] == pred
+  if is_valid:
+    print("✅ Correct!")
+  else:
+    print("❌ Incorrect!")
+  print()
 
 print(f"<predictions>{json.dumps(predictions)}</predictions>")
 `;
