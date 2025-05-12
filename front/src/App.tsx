@@ -42,10 +42,26 @@ def grid_colors(grid: Grid) -> dict[CellColor, int]:
       color_count[CellColor(cell)] += 1
   return color_count
 
+def main_color(grid: Grid, background_color: CellColor) -> CellColor:
+  """Get the main color of the grid."""
+  colors_histogram = grid_colors(grid)
+  colors_histogram.pop(background_color)
+  return max(colors_histogram, key=lambda x: colors_histogram[x])
+
 def recolor(grid: Grid, old_color: CellColor, new_color: CellColor):
   """Recolor cells of the grid of the old_color to the new_color."""
   grid_arr = np.array(grid)
   grid_arr[grid_arr == old_color.value] = new_color.value
+  return grid_arr.tolist()
+
+def invert_colors(grid: Grid, color_1: CellColor, color_2: CellColor):
+  """Recolor cells of the grid of the old_color to the new_color."""
+  grid_arr = np.array(grid)
+  grid_arr_1 = CellColor.TRANSPARENT.value * np.ones_like(grid)
+  grid_arr_1[grid_arr == color_1.value] = color_2.value
+  grid_arr_2 = CellColor.TRANSPARENT.value * np.ones_like(grid)
+  grid_arr_2[grid_arr == color_2.value] = color_1.value
+  grid_arr = np.maximum(grid_arr_1, grid_arr_2)
   return grid_arr.tolist()
 
 
@@ -89,14 +105,17 @@ def object_from_background(grid: Grid, background_color: CellColor) -> Object:
 
 
 def solve(input_grid: Grid) -> Grid:
+  background = CellColor.BLACK
+  obj_color = main_color(input_grid, background_color=background)
   object_shape = np.array(grid_shape(input_grid))
   output_array = np.zeros(object_shape ** 2)
+  reversed_grid = invert_colors(input_grid, background, obj_color)
   for i, row in enumerate(input_grid):
     for j, cell in enumerate(row):
-      if cell == CellColor.BLACK.value:
+      if cell == background.value:
         continue
       pos = (i * object_shape[0], j * object_shape[1])
-      output_array[pos[0]:pos[0]+object_shape[0], pos[1]:pos[1]+object_shape[1]] = input_grid
+      output_array[pos[0]:pos[0]+object_shape[0], pos[1]:pos[1]+object_shape[1]] = reversed_grid
   return output_array.tolist()
 
 `;
